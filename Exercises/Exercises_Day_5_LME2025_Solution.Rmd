@@ -1,0 +1,66 @@
+---
+title: "Exercises Day 5"
+author: "Your name"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(MASS)
+library(car)
+## be careful to load dplyr after MASS
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lme4)
+library(simr)
+library(ggeffects)
+library(lmerTest)
+# To solve some conflicts between packages:
+select <- dplyr::select
+
+```
+
+# Exercise 1
+In a new experiment, women rated their emotional state, their Positive Affect, during and after their pregnancy. In addition, the effect of the number of children (parity) on the emotional state was tested. Use the provided model below.
+Plot the predicted effects for the Session_Nr fixed effect, the predicted effects for the the interaction between Weeks and Pregnancy as well as the threeway interaction between Weeks, Pregnancy and Parity (3 plots in total). Include confidence intervals as well as correct axis labeling.
+
+```{r Ex1, include=TRUE}
+load("Pregnancy_Data_LME2026.RData")
+
+PregnancyModelData <-
+  Pregnancy_Data %>%
+  mutate(Pregnancy = as.factor(Pregnancy))
+
+contrasts(PregnancyModelData$Pregnancy) <- contr.sum(2)/2
+contrasts(PregnancyModelData$Pregnancy)
+
+Model_10 = lmer(PosAffect ~ Pregnancy*Parity*Weeks + Session_Nr + (1| Subject), data=PregnancyModelData)
+summary(Model_10)
+```
+
+```{r Ex1b, include=TRUE}
+
+
+```
+
+# Exercise 2
+
+a) What is the power of the Parity fixed efffect in the model used in exercise 1a, when testing for 10 simulations?
+```{r Ex2a, include=TRUE, warning=FALSE}
+simr::simrOptions(progress=FALSE)
+powerSim(Model_10, nsim=10, test = fixed(xname="Parity", method="t"))
+```
+
+b) At which which level of Subjects does the fixed effect Pregnancy reach a high enough power? Create a graphical plot?
+```{r Ex2b, include=TRUE, warning=FALSE}
+simr::simrOptions(progress=FALSE)
+print(Model_10)
+
+Model_11 <- Model_10
+Model_11 = extend(Model_11, along = 'Subject', n = 500)
+p_curve <- powerCurve(Model_11, test=fixed(xname="Pregnancy"), along="Subject")
+plot(p_curve)
+
+```
